@@ -19,6 +19,7 @@ import time
 
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
+import greenlet as _greenlet
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline):
   cdef gpr_timespec c_increment
@@ -35,7 +36,15 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline):
       c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
         c_timeout = c_deadline
+      with gil:
+        print("Calling grpc_completion_queue_next() from completion_queue.pyx.pxi:_next()")
       c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
+      with gil:
+        print("Returned from grpc_completion_queue_next() to completion_queue.pyx.pxi:_next()")
+        g_current = _greenlet.getcurrent()
+        error = getattr(g_current, "_error", None)
+        if error is not None:
+          print("GOT AN EXCEPTION: %s: %s" % (type(error), error))
       if (c_event.type != GRPC_QUEUE_TIMEOUT or
           gpr_time_cmp(c_timeout, c_deadline) == 0):
         break

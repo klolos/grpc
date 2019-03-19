@@ -1118,7 +1118,10 @@ static void cq_shutdown_next(grpc_completion_queue* cq) {
 
 grpc_event grpc_completion_queue_next(grpc_completion_queue* cq,
                                       gpr_timespec deadline, void* reserved) {
-  return cq->vtable->next(cq, deadline, reserved);
+  std::cout << "In grpc_completion_queue_next()\n";
+  grpc_event e = cq->vtable->next(cq, deadline, reserved);
+  std::cout << "Leaving grpc_completion_queue_next()\n";
+  return e;
 }
 
 static int add_plucker(grpc_completion_queue* cq, void* tag,
