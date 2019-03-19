@@ -16,6 +16,7 @@
  *
  */
 
+#include <iostream>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/pollset.h"
@@ -45,7 +46,10 @@ void grpc_pollset_destroy(grpc_pollset* pollset) {
 grpc_error* grpc_pollset_work(grpc_pollset* pollset,
                               grpc_pollset_worker** worker,
                               grpc_millis deadline) {
-  return grpc_pollset_impl->work(pollset, worker, deadline);
+  std::cout << "In pollset.cc:grpc_pollset_work()" << std::endl;
+  grpc_error *error = grpc_pollset_impl->work(pollset, worker, deadline);
+  std::cout << "Leaving pollset.cc:grpc_pollset_work()" << std::endl;
+  return error;
 }
 
 grpc_error* grpc_pollset_kick(grpc_pollset* pollset,

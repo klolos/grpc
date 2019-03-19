@@ -25,6 +25,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 
 #include <string.h>
+#include <iostream>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -308,11 +309,13 @@ static void pollset_destroy(grpc_pollset* pollset) {
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker,
                                 grpc_millis deadline) {
+  std::cout << "In ev_posix:pollset_work()" << std::endl;
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset,
                          deadline);
   grpc_error* err = g_event_engine->pollset_work(pollset, worker, deadline);
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") end", pollset,
                          deadline);
+  std::cout << "Leaving ev_posix:pollset_work()" << std::endl;
   return err;
 }
 

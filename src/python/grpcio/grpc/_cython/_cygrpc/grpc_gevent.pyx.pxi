@@ -383,11 +383,24 @@ cdef void destroy_loop() with gil:
 cdef void kick_loop() with gil:
   g_event.set()
 
+import ipdb
+import greenlet as _greenlet
+
 cdef void run_loop(size_t timeout_ms) except * with gil:
+  # g_current = _greenlet.getcurrent()
+  # print("Timeout is %s ms, current greenlet is %s,"
+  #       " parent is %s" % (timeout_ms, g_current, g_current.parent))
+  print("In run_loop(), timeout is %s" % timeout_ms)
+  try:
     timeout = timeout_ms / 1000.0
     if timeout_ms > 0:
       g_event.wait(timeout)
       g_event.clear()
+  except BaseException as e:
+    print("Exception: %s: '%s'" % (type(e), e))
+    # ipdb.set_trace()
+    raise
+  print("Returning from run_loop()")
 
 ###############################
 ### Initializer ###############

@@ -22,6 +22,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -938,6 +939,7 @@ static void dump_pending_tags(grpc_completion_queue* cq) {}
 
 static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
                           void* reserved) {
+  std::cout << "In cq_next()" << std::endl;
   GPR_TIMER_SCOPE("grpc_completion_queue_next", 0);
 
   grpc_event ret;
@@ -971,6 +973,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     grpc_millis iteration_deadline = deadline_millis;
 
     if (is_finished_arg.stolen_completion != nullptr) {
+      std::cout << "Completion is stolen :O" << std::endl;
       grpc_cq_completion* c = is_finished_arg.stolen_completion;
       is_finished_arg.stolen_completion = nullptr;
       ret.type = GRPC_OP_COMPLETE;
@@ -983,27 +986,32 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     grpc_cq_completion* c = cq_event_queue_pop(&cqd->queue);
 
     if (c != nullptr) {
+      std::cout << "Got an item from the queue: " << c << std::endl;
       ret.type = GRPC_OP_COMPLETE;
       ret.success = c->next & 1u;
       ret.tag = c->tag;
       c->done(c->done_arg, c);
       break;
     } else {
+      std::cout << "Did not get an item from the queue" << std::endl;
       /* If c == NULL it means either the queue is empty OR in an transient
          inconsistent state. If it is the latter, we shold do a 0-timeout poll
          so that the thread comes back quickly from poll to make a second
          attempt at popping. Not doing this can potentially deadlock this
          thread forever (if the deadline is infinity) */
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
+        std::cout << "Setting iteration_deadline to 0" << std::endl;
         iteration_deadline = 0;
       }
     }
 
     if (gpr_atm_acq_load(&cqd->pending_events) == 0) {
+      std::cout << "gpr_atm_acq_load() is 0" << std::endl;
       /* Before returning, check if the queue has any items left over (since
          gpr_mpscq_pop() can sometimes return NULL even if the queue is not
          empty. If so, keep retrying but do not return GRPC_QUEUE_SHUTDOWN */
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
+        std::cout << "There are still items in the queue" << std::endl;
         /* Go to the beginning of the loop. No point doing a poll because
            (cq->shutdown == true) is only possible when there is no pending
            work (i.e cq->pending_events == 0) and any outstanding completion
@@ -1018,6 +1026,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 
     if (!is_finished_arg.first_loop &&
         grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
+      std::cout << "Got a timeout!" << std::endl;
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
       dump_pending_tags(cq);
@@ -1027,11 +1036,14 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     /* The main polling work happens in grpc_pollset_work */
     gpr_mu_lock(cq->mu);
     cq->num_polls++;
+    std::cout << "Calling work() from cq_next()" << std::endl;
     grpc_error* err = cq->poller_vtable->work(POLLSET_FROM_CQ(cq), nullptr,
                                               iteration_deadline);
+    std::cout << "Returned from work() to cq_next()" << std::endl;
     gpr_mu_unlock(cq->mu);
 
     if (err != GRPC_ERROR_NONE) {
+      std::cout << "work() returned an error, breaking" << std::endl;
       const char* msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
 
@@ -1042,8 +1054,10 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       break;
     }
     is_finished_arg.first_loop = false;
+    std::cout << "Here we go again!" << std::endl;
   }
 
+  std::cout << "Broke from main loop" << std::endl;
   if (cq_event_queue_num_items(&cqd->queue) > 0 &&
       gpr_atm_acq_load(&cqd->pending_events) > 0) {
     gpr_mu_lock(cq->mu);
@@ -1056,6 +1070,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 
   GPR_ASSERT(is_finished_arg.stolen_completion == nullptr);
 
+  std::cout << "Leaving cq_next()" << std::endl;
   return ret;
 }
 
@@ -1269,8 +1284,10 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     cq->num_polls++;
+    std::cout << "Calling work() from cq_pluck()" << std::endl;
     grpc_error* err =
         cq->poller_vtable->work(POLLSET_FROM_CQ(cq), &worker, deadline_millis);
+    std::cout << "Returned from work() to cq_pluck()" << std::endl;
     if (err != GRPC_ERROR_NONE) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);

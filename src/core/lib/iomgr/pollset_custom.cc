@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <iostream>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -63,9 +64,12 @@ static void pollset_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
+static int call_count = 0;
+
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
                                 grpc_millis deadline) {
+  std::cout << "In pollset_custom:pollset_work()" << std::endl;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&pollset->mu);
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
@@ -77,13 +81,19 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   // control back to the application
   grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
   grpc_core::ExecCtx::Set(nullptr);
-  poller_vtable->poll(static_cast<size_t>(timeout));
+  if (call_count++ > 300000) {
+    std::cout << "SKIPPING poll(), count is " << call_count << std::endl;
+  } else {
+    std::cout << "Calling poll(), count is " << call_count << std::endl;
+    poller_vtable->poll(static_cast<size_t>(timeout));
+  }
   grpc_core::ExecCtx::Set(curr);
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (grpc_core::ExecCtx::Get()->HasWork()) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_mu_lock(&pollset->mu);
+  std::cout << "Leaving pollset_custom:pollset_work()" << std::endl;
   return GRPC_ERROR_NONE;
 }
 
