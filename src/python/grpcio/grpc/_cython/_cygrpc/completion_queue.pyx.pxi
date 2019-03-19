@@ -101,7 +101,13 @@ cdef class CompletionQueue:
   # We name this 'poll' to avoid problems with CPython's expectations for
   # 'special' methods (like next and __next__).
   def poll(self, deadline=None):
-    return self._interpret_event(_next(self.c_completion_queue, deadline))
+    event = self._interpret_event(_next(self.c_completion_queue, deadline))
+    g_current = _greenlet.getcurrent()
+    error = getattr(g_current, "_error", None)
+    if error is not None:
+        print("Raising error from poll(): %s: %s" % (type(error), error))
+        raise error
+    return event
 
   def shutdown(self):
     with nogil:
