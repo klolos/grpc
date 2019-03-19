@@ -399,8 +399,10 @@ cdef grpc_error* run_loop(size_t timeout_ms) with gil:
     if timeout_ms > 0:
       g_event.wait(timeout)
       g_event.clear()
-  except BaseException as e:
+  except _greenlet.GreenletExit as e:
     print("Exception: %s: '%s'" % (type(e), e))
+    g_current = _greenlet.getcurrent()
+    g_current._error = e
     return grpc_error_cancelled()
   print("Returning from run_loop()")
   return grpc_error_none()
