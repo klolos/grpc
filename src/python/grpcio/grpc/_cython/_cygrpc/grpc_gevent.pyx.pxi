@@ -27,6 +27,9 @@ g_pool = None
 cdef grpc_error* grpc_error_none():
   return <grpc_error*>0
 
+cdef grpc_error* grpc_error_cancelled():
+  return <grpc_error*>4
+
 cdef grpc_error* socket_error(str syscall, str err):
   error_str = "{} failed: {}".format(syscall, err)
   error_bytes = str_to_bytes(error_str)
@@ -386,7 +389,7 @@ cdef void kick_loop() with gil:
 import ipdb
 import greenlet as _greenlet
 
-cdef void run_loop(size_t timeout_ms) except * with gil:
+cdef grpc_error* run_loop(size_t timeout_ms) except * with gil:
   # g_current = _greenlet.getcurrent()
   # print("Timeout is %s ms, current greenlet is %s,"
   #       " parent is %s" % (timeout_ms, g_current, g_current.parent))
@@ -398,9 +401,9 @@ cdef void run_loop(size_t timeout_ms) except * with gil:
       g_event.clear()
   except BaseException as e:
     print("Exception: %s: '%s'" % (type(e), e))
-    # ipdb.set_trace()
-    raise
+    return grpc_error_cancelled()
   print("Returning from run_loop()")
+  return grpc_error_none()
 
 ###############################
 ### Initializer ###############

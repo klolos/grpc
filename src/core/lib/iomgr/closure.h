@@ -46,7 +46,7 @@ typedef struct grpc_closure_list {
  *              describing what went wrong.
  *              Error contract: it is not the cb's job to unref this error;
  *              the closure scheduler will do that after the cb returns */
-typedef void (*grpc_iomgr_cb_func)(void* arg, grpc_error* error);
+typedef grpc_error* (*grpc_iomgr_cb_func)(void* arg, grpc_error* error);
 
 typedef struct grpc_closure_scheduler grpc_closure_scheduler;
 

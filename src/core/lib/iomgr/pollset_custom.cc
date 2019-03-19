@@ -64,7 +64,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static int call_count = 0;
+//static int call_count = 0;
 
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
@@ -81,12 +81,13 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   // control back to the application
   grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
   grpc_core::ExecCtx::Set(nullptr);
-  if (call_count++ > 300000) {
-    std::cout << "SKIPPING poll(), count is " << call_count << std::endl;
-  } else {
-    std::cout << "Calling poll(), count is " << call_count << std::endl;
-    poller_vtable->poll(static_cast<size_t>(timeout));
-  }
+  //if (call_count++ > 300000) {
+  //  std::cout << "SKIPPING poll(), count is " << call_count << std::endl;
+  //} else {
+  //  std::cout << "Calling poll(), count is " << call_count << std::endl;
+  //  poller_vtable->poll(static_cast<size_t>(timeout));
+  //}
+  grpc_error* err = poller_vtable->poll(static_cast<size_t>(timeout));
   grpc_core::ExecCtx::Set(curr);
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (grpc_core::ExecCtx::Get()->HasWork()) {
@@ -94,7 +95,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   }
   gpr_mu_lock(&pollset->mu);
   std::cout << "Leaving pollset_custom:pollset_work()" << std::endl;
-  return GRPC_ERROR_NONE;
+  return err;
 }
 
 static grpc_error* pollset_kick(grpc_pollset* pollset,
