@@ -389,7 +389,7 @@ cdef void kick_loop() with gil:
 import ipdb
 import greenlet as _greenlet
 
-cdef grpc_error* run_loop(size_t timeout_ms) except * with gil:
+cdef grpc_error* run_loop(size_t timeout_ms) with gil:
   # g_current = _greenlet.getcurrent()
   # print("Timeout is %s ms, current greenlet is %s,"
   #       " parent is %s" % (timeout_ms, g_current, g_current.parent))
