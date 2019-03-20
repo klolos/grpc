@@ -69,7 +69,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
                                 grpc_millis deadline) {
-  std::cout << "In pollset_custom:pollset_work()" << std::endl;
+  //std::cout << "In pollset_custom:pollset_work()" << std::endl;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&pollset->mu);
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
@@ -94,7 +94,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_mu_lock(&pollset->mu);
-  std::cout << "Leaving pollset_custom:pollset_work()" << std::endl;
+  //std::cout << "Leaving pollset_custom:pollset_work()" << std::endl;
   return err;
 }
 

@@ -131,8 +131,7 @@ static void done_poller(void* bp, grpc_error* error_ignored) {
 }
 
 static void run_poller(void* bp, grpc_error* error_ignored) {
-  // ???
-  std::cout << "In tcp_posix:run_poller" << std::endl;
+  //std::cout << "In tcp_posix:run_poller" << std::endl;
   backup_poller* p = static_cast<backup_poller*>(bp);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p run", p);
@@ -166,7 +165,7 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
     }
     GRPC_CLOSURE_SCHED(&p->run_poller, GRPC_ERROR_NONE);
   }
-  std::cout << "Leaving tcp_posix:run_poller" << std::endl;
+  //std::cout << "Leaving tcp_posix:run_poller" << std::endl;
 }
 
 static void drop_uncovered(grpc_tcp* tcp) {

@@ -46,9 +46,9 @@ void grpc_pollset_destroy(grpc_pollset* pollset) {
 grpc_error* grpc_pollset_work(grpc_pollset* pollset,
                               grpc_pollset_worker** worker,
                               grpc_millis deadline) {
-  std::cout << "In pollset.cc:grpc_pollset_work()" << std::endl;
+  //std::cout << "In pollset.cc:grpc_pollset_work()" << std::endl;
   grpc_error *error = grpc_pollset_impl->work(pollset, worker, deadline);
-  std::cout << "Leaving pollset.cc:grpc_pollset_work()" << std::endl;
+  //std::cout << "Leaving pollset.cc:grpc_pollset_work()" << std::endl;
   return error;
 }
 

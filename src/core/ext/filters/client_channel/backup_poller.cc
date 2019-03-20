@@ -105,7 +105,7 @@ static void g_poller_unref() {
 }
 
 static void run_poller(void* arg, grpc_error* error) {
-  std::cout << "In backup_poller:run_poller()" << std::endl;
+  //std::cout << "In backup_poller:run_poller()" << std::endl;
   backup_poller* p = static_cast<backup_poller*>(arg);
   if (error != GRPC_ERROR_NONE) {
     if (error != GRPC_ERROR_CANCELLED) {
@@ -120,20 +120,20 @@ static void run_poller(void* arg, grpc_error* error) {
     backup_poller_shutdown_unref(p);
     return;
   }
-  std::cout << "Calling grpc_pollset_work()" << std::endl;
+  //std::cout << "Calling grpc_pollset_work()" << std::endl;
   grpc_error* err =
       grpc_pollset_work(p->pollset, nullptr, grpc_core::ExecCtx::Get()->Now());
-  std::cout << "Returned from grpc_pollset_work()" << std::endl;
+  //std::cout << "Returned from grpc_pollset_work()" << std::endl;
   gpr_mu_unlock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
   grpc_timer_init(&p->polling_timer,
                   grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
                   &p->run_poller_closure);
-  std::cout << "Leaving backup_poller:run_poller()" << std::endl;
+  //std::cout << "Leaving backup_poller:run_poller()" << std::endl;
 }
 
 static void g_poller_init_locked() {
-  std::cout << "In backup_poller:g_poller_init_locked()" << std::endl;
+  //std::cout << "In backup_poller:g_poller_init_locked()" << std::endl;
   if (g_poller == nullptr) {
     g_poller = static_cast<backup_poller*>(gpr_zalloc(sizeof(backup_poller)));
     g_poller->pollset =
@@ -149,7 +149,7 @@ static void g_poller_init_locked() {
                     grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
                     &g_poller->run_poller_closure);
   }
-  std::cout << "Leaving backup_poller:g_poller_init_locked()" << std::endl;
+  //std::cout << "Leaving backup_poller:g_poller_init_locked()" << std::endl;
 }
 
 void grpc_client_channel_start_backup_polling(

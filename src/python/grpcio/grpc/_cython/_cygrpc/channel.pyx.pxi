@@ -308,7 +308,8 @@ cdef class SegregatedCall:
     g_current = _greenlet.getcurrent()
     error = getattr(g_current, "_error", None)
     if error is not None:
-        print("Raising error from next_event(): %s: %s" % (type(error), error))
+        print("Raising error from next_event(): %s: '%s', greenlet: %s" %
+              (type(error), error, g_current))
         raise error
     return res
 
@@ -468,7 +469,8 @@ cdef class Channel:
     g_current = _greenlet.getcurrent()
     error = getattr(g_current, "_error", None)
     if error is not None:
-        print("Raising error from next_call_event(): %s: %s" % (type(error), error))
+        print("Raising error from next_event(): %s: '%s', greenlet: %s" %
+              (type(error), error, g_current))
         raise error
     return res
 
@@ -493,7 +495,8 @@ cdef class Channel:
     g_current = _greenlet.getcurrent()
     error = getattr(g_current, "_error", None)
     if error is not None:
-        print("Raising error from watch_connectivity_state(): %s: %s" % (type(error), error))
+        print("Raising error from next_event(): %s: '%s', greenlet: %s" %
+              (type(error), error, g_current))
         raise error
     return res
 

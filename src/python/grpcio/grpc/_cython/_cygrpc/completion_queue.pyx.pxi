@@ -36,15 +36,15 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline):
       c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
         c_timeout = c_deadline
-      with gil:
-        print("Calling grpc_completion_queue_next() from completion_queue.pyx.pxi:_next()")
+      #with gil:
+      #  print("Calling grpc_completion_queue_next() from completion_queue.pyx.pxi:_next()")
       c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
-      with gil:
-        print("Returned from grpc_completion_queue_next() to completion_queue.pyx.pxi:_next()")
-        g_current = _greenlet.getcurrent()
-        error = getattr(g_current, "_error", None)
-        if error is not None:
-          print("GOT AN EXCEPTION: %s: %s" % (type(error), error))
+      #with gil:
+      #  print("Returned from grpc_completion_queue_next() to completion_queue.pyx.pxi:_next()")
+      #  g_current = _greenlet.getcurrent()
+      #  error = getattr(g_current, "_error", None)
+      #  if error is not None:
+      #    print("GOT AN EXCEPTION: %s: %s" % (type(error), error))
       if (c_event.type != GRPC_QUEUE_TIMEOUT or
           gpr_time_cmp(c_timeout, c_deadline) == 0):
         break
@@ -105,7 +105,8 @@ cdef class CompletionQueue:
     g_current = _greenlet.getcurrent()
     error = getattr(g_current, "_error", None)
     if error is not None:
-        print("Raising error from poll(): %s: %s" % (type(error), error))
+        print("Raising error from poll(): %s: %s, greenlet: %s" %
+              (type(error), error, g_current))
         raise error
     return event
 

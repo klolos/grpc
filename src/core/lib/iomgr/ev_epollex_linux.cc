@@ -1157,7 +1157,7 @@ static long gettid(void) { return syscall(__NR_gettid); }
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
                                 grpc_millis deadline) {
-  std::cout << "In ev_epollex_linux:pollset_work()" << std::endl;
+  //std::cout << "In ev_epollex_linux:pollset_work()" << std::endl;
   GPR_TIMER_SCOPE("pollset_work", 0);
 #ifdef GRPC_EPOLLEX_CREATE_WORKERS_ON_HEAP
   grpc_pollset_worker* worker =
@@ -1204,7 +1204,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   gpr_free(worker);
 #endif
 #undef WORKER_PTR
-  std::cout << "Leaving ev_epollex_linux:pollset_work()" << std::endl;
+  //std::cout << "Leaving ev_epollex_linux:pollset_work()" << std::endl;
   return error;
 }
 
