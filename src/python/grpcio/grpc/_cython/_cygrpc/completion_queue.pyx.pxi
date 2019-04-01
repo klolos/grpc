@@ -107,6 +107,7 @@ cdef class CompletionQueue:
     if error is not None:
         print("Raising error from poll(): %s: %s, greenlet: %s" %
               (type(error), error, g_current))
+        g_current._error = None
         raise error
     return event
 

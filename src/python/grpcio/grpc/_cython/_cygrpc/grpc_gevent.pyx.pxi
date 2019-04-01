@@ -387,23 +387,27 @@ cdef void kick_loop() with gil:
   g_event.set()
 
 import greenlet as _greenlet
+import logging
 
 cdef grpc_error* run_loop(size_t timeout_ms) with gil:
   # g_current = _greenlet.getcurrent()
   # print("Timeout is %s ms, current greenlet is %s,"
   #       " parent is %s" % (timeout_ms, g_current, g_current.parent))
   #print("In run_loop(), timeout is %s" % timeout_ms)
-  try:
-    timeout = timeout_ms / 1000.0
-    if timeout_ms > 0:
+  log = logging.getLogger(__name__)
+  log.info("Waiting on gRPC event for %s ms", timeout_ms)
+  timeout = timeout_ms / 1000.0
+  if timeout_ms > 0:
+    try:
       g_event.wait(timeout)
+    except BaseException as e:
+      g_current = _greenlet.getcurrent()
+      g_current._error = e
+      log.info("Exception raised: %s: '%s', greenlet: %s", type(e), e, g_current)
+      return grpc_error_cancelled()
+    finally:
       g_event.clear()
-  except _greenlet.GreenletExit as e:
-    g_current = _greenlet.getcurrent()
-    g_current._error = e
-    print("Exception raised: %s: '%s', greenlet: %s" % (type(e), e, g_current))
-    return grpc_error_cancelled()
-  #print("Returning from run_loop()")
+  #log.info("Returning from run_loop()")
   return grpc_error_none()
 
 ###############################

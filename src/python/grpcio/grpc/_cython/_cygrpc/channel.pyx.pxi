@@ -17,6 +17,9 @@ cimport cpython
 import threading
 import time
 import greenlet as _greenlet
+import logging
+
+log = logging.getLogger(__name__)
 
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
@@ -300,16 +303,25 @@ cdef class SegregatedCall:
     _cancel(self._channel_state, self._call_state, code, details)
 
   def next_event(self):
+    log.info("In next_event()")
     def on_success(tag):
       _process_segregated_call_tag(
         self._channel_state, self._call_state, self._c_completion_queue, tag)
     res = _next_call_event(
         self._channel_state, self._c_completion_queue, on_success, None)
+    batch_operations = getattr(res, "batch_operations", "missing")
+    completion_type = getattr(res, "completion_type", "missing")
+    success = getattr(res, "success", "missing")
+    _tag = getattr(res, "tag", "missing")
+    log.info("Got result %s, batch_operations=%s, completion_type=%s,"
+             " success=%s, tag=%s", res, batch_operations, completion_type,
+             success, _tag)
     g_current = _greenlet.getcurrent()
     error = getattr(g_current, "_error", None)
     if error is not None:
-        print("Raising error from next_event(): %s: '%s', greenlet: %s" %
-              (type(error), error, g_current))
+        log.error("Raising error from next_event(): %s: '%s', greenlet: %s",
+                  type(error), error, g_current)
+        g_current._error = None
         raise error
     return res
 
@@ -469,8 +481,9 @@ cdef class Channel:
     g_current = _greenlet.getcurrent()
     error = getattr(g_current, "_error", None)
     if error is not None:
-        print("Raising error from next_event(): %s: '%s', greenlet: %s" %
-              (type(error), error, g_current))
+        log.error("Raising error from next_call_event(): %s: '%s', greenlet: %s",
+                  type(error), error, g_current)
+        g_current._error = None
         raise error
     return res
 
@@ -495,8 +508,9 @@ cdef class Channel:
     g_current = _greenlet.getcurrent()
     error = getattr(g_current, "_error", None)
     if error is not None:
-        print("Raising error from next_event(): %s: '%s', greenlet: %s" %
-              (type(error), error, g_current))
+        log.error("Raising error from watch_connectivity_state(): %s: '%s', greenlet: %s",
+                  type(error), error, g_current)
+        g_current._error = None
         raise error
     return res
 
