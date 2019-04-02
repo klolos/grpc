@@ -19,6 +19,7 @@ import time
 
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
+import greenlet as _greenlet
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline):
   cdef gpr_timespec c_increment
@@ -92,7 +93,13 @@ cdef class CompletionQueue:
   # We name this 'poll' to avoid problems with CPython's expectations for
   # 'special' methods (like next and __next__).
   def poll(self, deadline=None):
-    return self._interpret_event(_next(self.c_completion_queue, deadline))
+    event = self._interpret_event(_next(self.c_completion_queue, deadline))
+    g_current = _greenlet.getcurrent()
+    error = getattr(g_current, "_error", None)
+    if error is not None:
+        g_current._error = None
+        raise error
+    return event
 
   def shutdown(self):
     with nogil:

@@ -16,6 +16,7 @@ cimport cpython
 
 import threading
 import time
+import greenlet as _greenlet
 
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
@@ -302,8 +303,14 @@ cdef class SegregatedCall:
     def on_success(tag):
       _process_segregated_call_tag(
         self._channel_state, self._call_state, self._c_completion_queue, tag)
-    return _next_call_event(
+    res = _next_call_event(
         self._channel_state, self._c_completion_queue, on_success, None)
+    g_current = _greenlet.getcurrent()
+    error = getattr(g_current, "_error", None)
+    if error is not None:
+        g_current._error = None
+        raise error
+    return res
 
 
 cdef SegregatedCall _segregated_call(
@@ -456,8 +463,14 @@ cdef class Channel:
       queue_deadline = time.time() + 1.0
     else:
       queue_deadline = None
-    return _next_call_event(self._state, self._state.c_call_completion_queue,
-                            on_success, queue_deadline)
+    res = _next_call_event(self._state, self._state.c_call_completion_queue,
+                           on_success, queue_deadline)
+    g_current = _greenlet.getcurrent()
+    error = getattr(g_current, "_error", None)
+    if error is not None:
+        g_current._error = None
+        raise error
+    return res
 
   def segregated_call(
       self, int flags, method, host, object deadline, object metadata,
@@ -476,7 +489,13 @@ cdef class Channel:
 
   def watch_connectivity_state(
       self, grpc_connectivity_state last_observed_state, object deadline):
-    return _watch_connectivity_state(self._state, last_observed_state, deadline)
+    res = _watch_connectivity_state(self._state, last_observed_state, deadline)
+    g_current = _greenlet.getcurrent()
+    error = getattr(g_current, "_error", None)
+    if error is not None:
+        g_current._error = None
+        raise error
+    return res
 
   def close(self, code, details):
     _close(self, code, details, False)

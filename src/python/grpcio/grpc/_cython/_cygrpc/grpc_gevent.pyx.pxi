@@ -27,6 +27,9 @@ g_pool = None
 cdef grpc_error* grpc_error_none():
   return <grpc_error*>0
 
+cdef grpc_error* grpc_error_cancelled():
+  return <grpc_error*>4
+
 cdef grpc_error* socket_error(str syscall, str err):
   error_str = "{} failed: {}".format(syscall, err)
   error_bytes = str_to_bytes(error_str)
@@ -383,11 +386,20 @@ cdef void destroy_loop() with gil:
 cdef void kick_loop() with gil:
   g_event.set()
 
-cdef void run_loop(size_t timeout_ms) with gil:
-    timeout = timeout_ms / 1000.0
-    if timeout_ms > 0:
+import greenlet as _greenlet
+
+cdef grpc_error* run_loop(size_t timeout_ms) with gil:
+  timeout = timeout_ms / 1000.0
+  if timeout_ms > 0:
+    try:
       g_event.wait(timeout)
+    except BaseException as e:
+      g_current = _greenlet.getcurrent()
+      g_current._error = e
+      return grpc_error_cancelled()
+    finally:
       g_event.clear()
+  return grpc_error_none()
 
 ###############################
 ### Initializer ###############
